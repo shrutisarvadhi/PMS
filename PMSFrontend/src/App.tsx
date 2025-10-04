@@ -1,34 +1,40 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Navigate, Route, Routes } from 'react-router-dom'
+
+import RoleProtectedRoute from './components/RoleProtectedRoute'
+import DashboardLayout from './components/layout/DashboardLayout'
+import LoginPage from './pages/Login'
+import RegisterPage from './pages/Register'
+import Dashboard from './pages/dashboard/Dashboard'
+import Employees from './pages/dashboard/Employees'
+import Projects from './pages/dashboard/Projects'
+import Tasks from './pages/dashboard/Tasks'
+import Timesheets from './pages/dashboard/Timesheets'
+import Timelogs from './pages/dashboard/Timelogs'
+import UserProfile from './pages/dashboard/UserProfile'
+import Unauthorized from './pages/Unauthorized'
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <Routes>
+      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+
+      <Route element={<RoleProtectedRoute allowedRoles={['Admin', 'PM', 'ProjectManager', 'Employee']} />}>
+        <Route path="/dashboard" element={<DashboardLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="profile" element={<UserProfile />} />
+          <Route path="employees" element={<Employees />} />
+          <Route path="projects" element={<Projects />} />
+          <Route path="tasks" element={<Tasks />} />
+          <Route path="timesheets" element={<Timesheets />} />
+          <Route path="timelogs" element={<Timelogs />} />
+        </Route>
+      </Route>
+
+      <Route path="/unauthorized" element={<Unauthorized />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+    </Routes>
   )
 }
 
