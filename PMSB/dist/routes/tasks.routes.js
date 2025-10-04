@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const user_model_1 = require("../models/user.model");
+const task_controller_1 = require("../controllers/task.controller");
+const task_validator_1 = require("../validators/task.validator");
+const validation_middleware_1 = require("../middleware/validation.middleware");
+const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authenticateJWT);
+router.get('/', task_controller_1.listTasks);
+router.get('/:id', task_controller_1.getTaskById);
+router.post('/', (0, auth_middleware_1.authorizeRoles)(user_model_1.UserRole.Admin, user_model_1.UserRole.ProjectManager), task_validator_1.createTaskValidation, validation_middleware_1.validateRequest, task_controller_1.createTask);
+router.put('/:id', (0, auth_middleware_1.authorizeRoles)(user_model_1.UserRole.Admin, user_model_1.UserRole.ProjectManager), task_validator_1.updateTaskValidation, validation_middleware_1.validateRequest, task_controller_1.updateTask);
+router.delete('/:id', (0, auth_middleware_1.authorizeRoles)(user_model_1.UserRole.Admin, user_model_1.UserRole.ProjectManager), task_controller_1.deleteTask);
+exports.default = router;

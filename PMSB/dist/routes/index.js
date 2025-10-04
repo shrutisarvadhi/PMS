@@ -1,0 +1,22 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_routes_1 = __importDefault(require("./auth.routes"));
+const users_routes_1 = __importDefault(require("./users.routes"));
+const employees_routes_1 = __importDefault(require("./employees.routes"));
+const projects_routes_1 = __importDefault(require("./projects.routes"));
+const tasks_routes_1 = __importDefault(require("./tasks.routes"));
+const timesheets_routes_1 = __importDefault(require("./timesheets.routes"));
+const timelogs_routes_1 = __importDefault(require("./timelogs.routes"));
+const router = (0, express_1.Router)();
+router.use('/auth', auth_routes_1.default);
+router.use('/users', users_routes_1.default);
+router.use('/employees', employees_routes_1.default);
+router.use('/projects', projects_routes_1.default);
+router.use('/tasks', tasks_routes_1.default);
+router.use('/timesheets', timesheets_routes_1.default);
+router.use('/timelogs', timelogs_routes_1.default);
+exports.default = router;

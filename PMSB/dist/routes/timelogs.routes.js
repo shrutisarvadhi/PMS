@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const user_model_1 = require("../models/user.model");
+const timelog_controller_1 = require("../controllers/timelog.controller");
+const timelog_validator_1 = require("../validators/timelog.validator");
+const validation_middleware_1 = require("../middleware/validation.middleware");
+const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authenticateJWT);
+router.get('/', timelog_controller_1.listTimelogs);
+router.get('/:id', timelog_controller_1.getTimelogById);
+router.post('/', (0, auth_middleware_1.authorizeRoles)(user_model_1.UserRole.Admin), timelog_validator_1.createTimelogValidation, validation_middleware_1.validateRequest, timelog_controller_1.createTimelog);
+router.put('/:id', (0, auth_middleware_1.authorizeRoles)(user_model_1.UserRole.Admin), timelog_validator_1.updateTimelogValidation, validation_middleware_1.validateRequest, timelog_controller_1.updateTimelog);
+router.delete('/:id', (0, auth_middleware_1.authorizeRoles)(user_model_1.UserRole.Admin), timelog_controller_1.deleteTimelog);
+exports.default = router;

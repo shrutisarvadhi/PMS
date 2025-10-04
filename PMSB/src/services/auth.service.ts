@@ -16,6 +16,7 @@ export class AuthService {
     const existingUser = await User.findOne({
       where: { username: usernameTrimmed },
     });
+    
 
     if (existingUser) {
       throw new AppError(409, 'Username already in use');

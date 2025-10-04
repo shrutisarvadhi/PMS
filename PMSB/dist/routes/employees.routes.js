@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const user_model_1 = require("../models/user.model");
+const employee_controller_1 = require("../controllers/employee.controller");
+const employee_validator_1 = require("../validators/employee.validator");
+const validation_middleware_1 = require("../middleware/validation.middleware");
+const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authenticateJWT);
+router.get('/', employee_controller_1.listEmployees);
+router.get('/:id', employee_controller_1.getEmployeeById);
+router.post('/', (0, auth_middleware_1.authorizeRoles)(user_model_1.UserRole.Admin), employee_validator_1.createEmployeeValidation, validation_middleware_1.validateRequest, employee_controller_1.createEmployee);
+router.put('/:id', (0, auth_middleware_1.authorizeRoles)(user_model_1.UserRole.Admin), employee_validator_1.updateEmployeeValidation, validation_middleware_1.validateRequest, employee_controller_1.updateEmployee);
+router.delete('/:id', (0, auth_middleware_1.authorizeRoles)(user_model_1.UserRole.Admin), employee_controller_1.deleteEmployee);
+exports.default = router;
