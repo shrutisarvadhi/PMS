@@ -1,3 +1,4 @@
+// src/models/employee.model.ts
 import type { CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes, NonAttribute } from 'sequelize';
 import { DataTypes, Model, Sequelize } from 'sequelize';
 import type { User } from './user.model';
@@ -10,6 +11,7 @@ export class Employee extends Model<InferAttributes<Employee>, InferCreationAttr
   declare lastName: string;
   declare department: string | null;
   declare position: string | null;
+  declare status: 'Active' | 'On Leave' | 'Contract'; // Now properly declared
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
 
@@ -54,6 +56,12 @@ export class Employee extends Model<InferAttributes<Employee>, InferCreationAttr
         position: {
           type: DataTypes.STRING,
           allowNull: true,
+        },
+        // ✅ ADD THIS BLOCK
+        status: {
+          type: DataTypes.ENUM('Active', 'On Leave', 'Contract'),
+          allowNull: false,
+          defaultValue: 'Active',
         },
         createdAt: {
           allowNull: false,

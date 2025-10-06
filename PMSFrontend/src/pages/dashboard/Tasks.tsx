@@ -10,10 +10,11 @@ import SelectField from '../../components/ui/SelectField'
 import TextareaField from '../../components/ui/TextareaField'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
-// import { useRoleAccess } from '../../hooks/useRoleAccess'
 // import type { ApiError } from '../../types/api'
 import type { Task, TaskPayload, TaskPriority, TaskStatus } from '../../types/tasks'
 import EmptyState from '../../components/ui/EmptyState'
+import { fetchProjects } from '../../api/projects'
+import { useRoleAccess } from '../../hooks/useRoleAccess'
 
 interface TaskFormState {
   title: string
@@ -21,8 +22,10 @@ interface TaskFormState {
   status: TaskStatus
   priority: TaskPriority
   assignee: string
-  project: string
+  // project: string
   dueDate: string
+  projectId: string | number | '' // 👈 changed from 'project: string'
+
 }
 
 const defaultStatuses: TaskStatus[] = ['To Do', 'In Progress', 'Review', 'Blocked', 'Done']
@@ -34,7 +37,9 @@ const initialTaskForm: TaskFormState = {
   status: 'To Do',
   priority: 'Medium',
   assignee: '',
-  project: '',
+  // project: '',
+  projectId: '', // 👈 was 'project: '''
+
   dueDate: '',
 }
 
@@ -42,7 +47,7 @@ function Tasks() {
   const { logout } = useAuth()
   const navigate = useNavigate()
   const { showToast } = useToast()
-  // const taskAccess = useRoleAccess('tasks')
+  const taskAccess = useRoleAccess('tasks')
 
   const [tasks, setTasks] = useState<Task[]>([])
   const [isListLoading, setIsListLoading] = useState<boolean>(false)
@@ -64,7 +69,33 @@ function Tasks() {
   const [isFormSubmitting, setIsFormSubmitting] = useState<boolean>(false)
 
   const [deleteLoadingId, setDeleteLoadingId] = useState<string | number | null>(null)
+  // Add this after your other useState calls
+  const [projects, setProjects] = useState<{ id: number | string; name: string }[]>([])
+  const [isProjectsLoading, setIsProjectsLoading] = useState<boolean>(false)
 
+
+  // Add this useEffect (e.g., after loadTasks useEffect)
+  useEffect(() => {
+    const loadProjects = async () => {
+      setIsProjectsLoading(true)
+      try {
+        const data = await fetchProjects()
+        // Ensure each project has id and name
+        const projectList = (Array.isArray(data) ? data : []).map(p => ({
+          id: p.id,
+          name: p.name,
+        }))
+        setProjects(projectList)
+      } catch (error) {
+        console.error('Failed to load projects for dropdown:', error)
+        // Optional: show toast error
+      } finally {
+        setIsProjectsLoading(false)
+      }
+    }
+
+    loadProjects()
+  }, [])
   // const canManageTasks = taskAccess.canCreate || taskAccess.canUpdate || taskAccess.canDelete
 
   const handleUnauthorized = useCallback(() => {
@@ -188,9 +219,11 @@ function Tasks() {
   )
 
   const openCreateForm = () => {
-    // if (!taskAccess.canCreate) {
-    //   return
-    // }
+    console.log('Attempting to open create form, taskAccess:', taskAccess);
+    
+    if (!taskAccess.canCreate) {
+      return
+    }
 
     setFormMode('create')
     setFormState(initialTaskForm)
@@ -202,9 +235,9 @@ function Tasks() {
 
   const openEditForm = useCallback(
     async (taskId: string | number) => {
-      // if (!taskAccess.canUpdate) {
-      //   return
-      // }
+      if (!taskAccess.canUpdate) {
+        return
+      }
 
       setFormMode('edit')
       setFormError(null)
@@ -220,7 +253,9 @@ function Tasks() {
           status: (task.status as TaskStatus) ?? 'To Do',
           priority: (task.priority as TaskPriority) ?? 'Medium',
           assignee: (task.assignee as string) ?? '',
-          project: (task.project as string) ?? '',
+          // project: (task.project as string) ?? '',
+          projectId: task.projectId ?? '', // 👈 use actual projectId, not project name
+
           dueDate: task.dueDate ? task.dueDate.slice(0, 10) : '',
         })
       } catch (error) {
@@ -255,13 +290,13 @@ function Tasks() {
   const handleFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    // if (formMode === 'create' && !taskAccess.canCreate) {
-    //   return
-    // }
+    if (formMode === 'create' && !taskAccess.canCreate) {
+      return
+    }
 
-    // if (formMode === 'edit' && !taskAccess.canUpdate) {
-    //   return
-    // }
+    if (formMode === 'edit' && !taskAccess.canUpdate) {
+      return
+    }
 
     const trimmedTitle = formState.title.trim()
     if (!trimmedTitle) {
@@ -275,7 +310,9 @@ function Tasks() {
       status: formState.status || undefined,
       priority: formState.priority || undefined,
       assignee: formState.assignee.trim() || undefined,
-      project: formState.project.trim() || undefined,
+      // project: formState.project.trim() || undefined,
+      projectId: formState.projectId ? Number(formState.projectId) : undefined, // 👈 critical!
+
       dueDate: formState.dueDate || undefined,
     }
 
@@ -283,6 +320,7 @@ function Tasks() {
 
     try {
       if (formMode === 'create') {
+        console.log('Submitting task payload:', payload)
         await createTask(payload)
         showSuccess('Task created successfully.')
       } else if (selectedTaskId !== null) {
@@ -398,7 +436,7 @@ function Tasks() {
             description="Adjust filters or create a new task to get started."
             action={
               // taskAccess.canCreate ? (
-                <Button onClick={openCreateForm}>Create task</Button>
+              <Button onClick={openCreateForm}>Create task</Button>
               // ) : undefined
             }
           />
@@ -443,18 +481,18 @@ function Tasks() {
                       View details
                     </Button>
                     {/* {taskAccess.canUpdate && ( */}
-                      <Button variant="outline" onClick={() => openEditForm(taskId)}>
-                        Edit
-                      </Button>
+                    <Button variant="outline" onClick={() => openEditForm(taskId)}>
+                      Edit
+                    </Button>
                     {/* )} */}
                     {/* {taskAccess.canDelete && ( */}
-                      <Button
-                        variant="danger"
-                        onClick={() => handleDeleteTask(taskId)}
-                        loading={deleteLoadingId === taskId}
-                      >
-                        Delete
-                      </Button>
+                    <Button
+                      variant="danger"
+                      onClick={() => handleDeleteTask(taskId)}
+                      loading={deleteLoadingId === taskId}
+                    >
+                      Delete
+                    </Button>
                     {/* )} */}
                   </div>
                 </article>
@@ -477,18 +515,18 @@ function Tasks() {
             {selectedTaskId !== null && (
               <div className="flex flex-wrap gap-2">
                 {/* {taskAccess.canUpdate && ( */}
-                  <Button variant="outline" onClick={() => openEditForm(selectedTaskId)}>
-                    Edit task
-                  </Button>
+                <Button variant="outline" onClick={() => openEditForm(selectedTaskId)}>
+                  Edit task
+                </Button>
                 {/* )} */}
                 {/* {taskAccess.canDelete && ( */}
-                  <Button
-                    variant="danger"
-                    onClick={() => handleDeleteTask(selectedTaskId)}
-                    loading={deleteLoadingId === selectedTaskId}
-                  >
-                    Delete task
-                  </Button>
+                <Button
+                  variant="danger"
+                  onClick={() => handleDeleteTask(selectedTaskId)}
+                  loading={deleteLoadingId === selectedTaskId}
+                >
+                  Delete task
+                </Button>
                 {/* )} */}
               </div>
             )}
@@ -607,12 +645,26 @@ function Tasks() {
                 value={formState.assignee}
                 onChange={handleFormChange('assignee')}
               />
-              <InputField
+              {/* <InputField
                 id="task-project"
                 label="Project"
                 placeholder="Related project"
                 value={formState.project}
                 onChange={handleFormChange('project')}
+              /> */}
+              <SelectField
+                id="task-project"
+                label="Project"
+                value={formState.projectId}
+                onChange={handleFormChange('projectId')}
+                options={[
+                  { label: 'Select a project', value: '' },
+                  ...projects.map(project => ({
+                    label: project.name,
+                    value: String(project.id), // or project.id if your backend expects number
+                  })),
+                ]}
+                required
               />
             </div>
 

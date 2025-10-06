@@ -23,7 +23,7 @@ export interface TaskPayload {
   priority?: TaskPriority
   assignee?: string
   project?: string
-  projectId?: string | number
+  projectId:  number
   dueDate?: string | null
 }
 

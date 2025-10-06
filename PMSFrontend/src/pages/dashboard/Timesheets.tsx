@@ -12,7 +12,7 @@ import TextareaField from '../../components/ui/TextareaField'
 import { useAuth } from '../../context/AuthContext'
 import type { ApiError } from '../../types/api'
 import type { Timesheet, TimesheetPayload, TimesheetStatus } from '../../types/timesheets'
-
+import { useToast } from '../../context/ToastContext';
 
 interface TimesheetFormState {
   user: string
@@ -41,8 +41,24 @@ const initialTimesheetForm: TimesheetFormState = {
 function Timesheets() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  // const { showToast } = useToast()
+  const { showToast } = useToast()
   // const timesheetAccess = useRoleAccess('timesheets')
+
+
+  const showError = useCallback(
+    (message: string) => {
+      showToast({ variant: 'error', description: message });
+    },
+    [showToast]
+  );
+  
+  const showSuccess = useCallback(
+    (message: string) => {
+      showToast({ variant: 'success', description: message });
+    },
+    [showToast]
+  );
+
 
   const [timesheets, setTimesheets] = useState<Timesheet[]>([])
   const [isListLoading, setIsListLoading] = useState<boolean>(false)
@@ -71,19 +87,7 @@ function Timesheets() {
     navigate('/login', { replace: true })
   }, [logout, navigate])
 
-  // const showError = useCallback(
-  //   (message: string) => {
-  //     showToast({ variant: 'error', description: message })
-  //   },
-  //   [showToast],
-  // )
-
-  // const showSuccess = useCallback(
-  //   (message: string) => {
-  //     showToast({ variant: 'success', description: message })
-  //   },
-  //   [showToast],
-  // )
+ 
 
   const loadTimesheets = useCallback(async () => {
     setIsListLoading(true)
@@ -98,7 +102,9 @@ function Timesheets() {
       }
 
       const message = error instanceof Error ? error.message : 'Unable to load timesheets.'
-      showError(message)
+      console.error(message);
+
+      // showError(message)
     } finally {
       setIsListLoading(false)
     }
