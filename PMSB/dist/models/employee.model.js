@@ -36,6 +36,10 @@ class Employee extends sequelize_1.Model {
                 type: sequelize_1.DataTypes.STRING,
                 allowNull: true,
             },
+            status: {
+                type: sequelize_1.DataTypes.ENUM('Active', 'On Leave', 'Contract'),
+                allowNull: true,
+            },
             position: {
                 type: sequelize_1.DataTypes.STRING,
                 allowNull: true,

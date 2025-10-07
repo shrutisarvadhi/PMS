@@ -15,33 +15,33 @@ import type { Task, TaskPayload, TaskPriority, TaskStatus } from '../../types/ta
 import EmptyState from '../../components/ui/EmptyState'
 import { fetchProjects } from '../../api/projects'
 import { useRoleAccess } from '../../hooks/useRoleAccess'
+import { fetchEmployees, type Employee } from '../../api/employees'
 
 interface TaskFormState {
-  title: string
-  description: string
-  status: TaskStatus
-  priority: TaskPriority
-  assignee: string
-  // project: string
-  dueDate: string
-  projectId: string | number | '' // 👈 changed from 'project: string'
-
+  title: string;
+  description: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  assigneeId: string;          // Changed from 'assignee'
+  projectId: string;           // Required, no empty option
+  dueDate: string;
 }
 
-const defaultStatuses: TaskStatus[] = ['To Do', 'In Progress', 'Review', 'Blocked', 'Done']
+
+const defaultStatuses: TaskStatus[] = ['Todo', 'InProgress', 'Completed', 'Blocked']
+
 const defaultPriorities: TaskPriority[] = ['Low', 'Medium', 'High', 'Critical']
+
 
 const initialTaskForm: TaskFormState = {
   title: '',
   description: '',
-  status: 'To Do',
+  status: 'Todo',              // Updated default
   priority: 'Medium',
-  assignee: '',
-  // project: '',
-  projectId: '', // 👈 was 'project: '''
-
+  assigneeId: '',              // Can be empty (optional)
+  projectId: '',               // Will be required in validation
   dueDate: '',
-}
+};
 
 function Tasks() {
   const { logout } = useAuth()
@@ -72,7 +72,8 @@ function Tasks() {
   // Add this after your other useState calls
   const [projects, setProjects] = useState<{ id: number | string; name: string }[]>([])
   const [isProjectsLoading, setIsProjectsLoading] = useState<boolean>(false)
-
+  const [users, setUsers] = useState<Array<{ id: string; username: string }>>([]);
+  const [employeesForAssignee, setEmployeesForAssignee] = useState<Employee[]>([])
 
   // Add this useEffect (e.g., after loadTasks useEffect)
   useEffect(() => {
@@ -97,6 +98,26 @@ function Tasks() {
     loadProjects()
   }, [])
   // const canManageTasks = taskAccess.canCreate || taskAccess.canUpdate || taskAccess.canDelete
+
+
+
+  // Add this useEffect alongside your projects useEffect
+  useEffect(() => {
+    const loadEmployeesForAssignee = async () => {
+      try {
+        const data = await fetchEmployees()
+        console.log('Fetched employees for assignee dropdown:', data);
+        
+        setEmployeesForAssignee(Array.isArray(data) ? data : [])
+      } catch (error) {
+        console.error('Failed to load employees for assignee dropdown:', error)
+        // Optional: showToast error
+      }
+    }
+    loadEmployeesForAssignee()
+  }, [])
+
+
 
   const handleUnauthorized = useCallback(() => {
     logout()
@@ -175,7 +196,7 @@ function Tasks() {
         return true
       }
 
-      const valuesToSearch = [task.title, task.description, task.project, task.assignee, task.status, task.priority]
+      const valuesToSearch = [task.title, task.description, task.projectName, task.assigneeName, task.status, task.priority]
       return valuesToSearch.some((value) => value && value.toString().toLowerCase().includes(search))
     })
   }, [priorityFilter, searchTerm, statusFilter, tasks])
@@ -220,7 +241,7 @@ function Tasks() {
 
   const openCreateForm = () => {
     console.log('Attempting to open create form, taskAccess:', taskAccess);
-    
+
     if (!taskAccess.canCreate) {
       return
     }
@@ -249,15 +270,13 @@ function Tasks() {
         const task = await fetchTaskById(taskId)
         setFormState({
           title: task.title ?? '',
-          description: (task.description as string) ?? '',
-          status: (task.status as TaskStatus) ?? 'To Do',
-          priority: (task.priority as TaskPriority) ?? 'Medium',
-          assignee: (task.assignee as string) ?? '',
-          // project: (task.project as string) ?? '',
-          projectId: task.projectId ?? '', // 👈 use actual projectId, not project name
-
+          description: task.description ?? '',
+          status: task.status ?? 'Todo',
+          priority: task.priority ?? 'Medium',
+          assigneeId: task.assigneeId ?? '',    // Changed
+          projectId: task.projectId ?? '',
           dueDate: task.dueDate ? task.dueDate.slice(0, 10) : '',
-        })
+        });
       } catch (error) {
         const status = (error as ApiError)?.status
         if (status === 401) {
@@ -303,24 +322,30 @@ function Tasks() {
       setFormError('Task title is required.')
       return
     }
-
+    if (!formState.projectId) {
+      setFormError('Project is required.');
+      return;
+    }
     const payload: TaskPayload = {
+      projectId: formState.projectId,        // Required
       title: trimmedTitle,
       description: formState.description.trim() || undefined,
-      status: formState.status || undefined,
-      priority: formState.priority || undefined,
-      assignee: formState.assignee.trim() || undefined,
-      // project: formState.project.trim() || undefined,
-      projectId: formState.projectId ? Number(formState.projectId) : undefined, // 👈 critical!
-
+      assigneeId: formState.assigneeId ? formState.assigneeId : null,// Optional
+      status: formState.status,
+      priority: formState.priority,
       dueDate: formState.dueDate || undefined,
-    }
+    };
 
     setIsFormSubmitting(true)
 
     try {
       if (formMode === 'create') {
         console.log('Submitting task payload:', payload)
+        console.log('Submitting payload:', {
+          ...payload,
+          assigneeId: payload.assigneeId === null ? 'null' : payload.assigneeId,
+          projectId: payload.projectId
+        });
         await createTask(payload)
         showSuccess('Task created successfully.')
       } else if (selectedTaskId !== null) {
@@ -460,11 +485,12 @@ function Tasks() {
                     <dl className="space-y-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
                       <div className="flex justify-between">
                         <dt>Assignee</dt>
-                        <dd className="text-slate-600">{task.assignee ? String(task.assignee) : '--'}</dd>
-                      </div>
+                        <dd className="text-slate-600">
+                          {task.assigneeName || '--'}  {/* Show user's name, not ID */}
+                        </dd>                      </div>
                       <div className="flex justify-between">
                         <dt>Project</dt>
-                        <dd className="text-slate-600">{task.project ? String(task.project) : '--'}</dd>
+                        <dd className="text-slate-600">{task.projectName || '--'}</dd>
                       </div>
                       <div className="flex justify-between">
                         <dt>Priority</dt>
@@ -564,11 +590,11 @@ function Tasks() {
               </div>
               <div className="space-y-2 rounded-2xl bg-slate-50/60 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Assignee</p>
-                <p className="text-sm font-semibold text-slate-800">{selectedTask.assignee ? String(selectedTask.assignee) : '--'}</p>
+                <p className="text-sm font-semibold text-slate-800">{selectedTask.assigneeName ? String(selectedTask.assigneeName) : '--'}</p>
               </div>
               <div className="space-y-2 rounded-2xl bg-slate-50/60 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Project</p>
-                <p className="text-sm font-semibold text-slate-800">{selectedTask.project ? String(selectedTask.project) : '--'}</p>
+                <p className="text-sm font-semibold text-slate-800">{selectedTask.projectName ? String(selectedTask.projectName) : '--'}</p>
               </div>
               <div className="space-y-2 rounded-2xl bg-slate-50/60 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Due date</p>
@@ -638,12 +664,19 @@ function Tasks() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <InputField
+
+              <SelectField
                 id="task-assignee"
                 label="Assignee"
-                placeholder="Assign to a teammate"
-                value={formState.assignee}
-                onChange={handleFormChange('assignee')}
+                value={formState.assigneeId}
+                onChange={handleFormChange('assigneeId')}
+                options={[
+                  { label: 'Unassigned', value: '' },
+                  ...employeesForAssignee.map(emp => ({
+                    label: `${emp.firstName} ${emp.lastName}`,
+                    value: emp.userId, // ✅ MUST be userId, not id
+                  }))
+                ]}
               />
               {/* <InputField
                 id="task-project"
@@ -657,13 +690,10 @@ function Tasks() {
                 label="Project"
                 value={formState.projectId}
                 onChange={handleFormChange('projectId')}
-                options={[
-                  { label: 'Select a project', value: '' },
-                  ...projects.map(project => ({
-                    label: project.name,
-                    value: String(project.id), // or project.id if your backend expects number
-                  })),
-                ]}
+                options={projects.map(project => ({
+                  label: project.name,
+                  value: project.id,   // UUID string
+                }))}
                 required
               />
             </div>

@@ -1,213 +1,57 @@
-// import { useMemo, useState,useEffect } from 'react'
-// import LoadingState from '../../components/ui/LoadingState' // 👈 optional but recommended
-
-// import { useAuth } from '../../context/AuthContext'
-// import { navigationConfig, type AccessLevel } from '../../constants/navigation'
-// import { fetchEmployees, type Employee } from '../../api/employees' // ✅ use API type
-
-
-
-// function Employees() {
-//   const { user } = useAuth()
-//   const [query, setQuery] = useState<string>('')
-//   const [employees, setEmployees] = useState<Employee[]>([]) // 👈 new state
-//   const [isLoading, setIsLoading] = useState<boolean>(true) // 👈 loading state
-//   const [error, setError] = useState<string | null>(null) // 👈 error state
-
-//   const accessLevel: AccessLevel | undefined = user 
-//   ? navigationConfig[user.role]?.find((item) => item.label === 'Employees')?.access 
-//   : undefined
-
-
-//   useEffect(() => {
-//     const loadEmployees = async () => {
-//       setIsLoading(true)
-//       setError(null)
-//       try {
-//         const data = await fetchEmployees()
-//         setEmployees(data)
-//       } catch (err) {
-//         setError('Failed to load employee data')
-//         console.error('Employee fetch error:', err)
-//       } finally {
-//         setIsLoading(false)
-//       }
-//     }
-
-//     loadEmployees()
-//   }, [])
-
-
-// const filteredEmployees = useMemo(() => {
-//   if (!query.trim()) {
-//     return employees // 👈 use real data
-//   }
-//   const lowerQuery = query.toLowerCase()
-//   return employees.filter((employee) =>
-//     [employee.name, employee.role, employee.department, employee.email].some((value) => 
-//       value?.toString().toLowerCase().includes(lowerQuery)
-//     ),
-//   )
-// }, [employees, query])
-
-// // Loading state
-// if (isLoading) {
-//   return (
-//     <div className="space-y-6">
-//       <header className="rounded-3xl border border-slate-200/70 bg-white/90 p-6 shadow-md backdrop-blur">
-//         <h1 className="text-2xl font-semibold text-slate-900">Team directory</h1>
-//         <p className="mt-2 text-sm text-slate-500">Browse and manage your delivery team members...</p>
-//       </header>
-//       <LoadingState className="mt-6" message="Loading employees..." />
-//     </div>
-//   )
-// }
-
-// // Error state
-// if (error) {
-//   return (
-//     <div className="space-y-6">
-//       <header className="rounded-3xl border border-slate-200/70 bg-white/90 p-6 shadow-md backdrop-blur">
-//         <h1 className="text-2xl font-semibold text-slate-900">Team directory</h1>
-//         <p className="mt-2 text-sm text-slate-500">Browse and manage your delivery team members...</p>
-//       </header>
-//       <div className="rounded-3xl border border-slate-200/70 bg-white/90 p-6 shadow-md backdrop-blur">
-//         <p className="text-red-600">{error}</p>
-//       </div>
-//     </div>
-//   )
-// }
-
-//   return (
-//     <div className="space-y-6">
-//       <header className="rounded-3xl border border-slate-200/70 bg-white/90 p-6 shadow-md backdrop-blur">
-//         <h1 className="text-2xl font-semibold text-slate-900">Team directory</h1>
-//         <p className="mt-2 text-sm text-slate-500">Browse and manage your delivery team members, permissions, and contact details.</p>
-//       </header>
-
-//       <section className="rounded-3xl border border-slate-200/70 bg-white/90 p-6 shadow-md backdrop-blur">
-//         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-//           <div>
-//             <h2 className="text-lg font-semibold text-slate-900">Employees</h2>
-//             <p className="text-sm text-slate-500">Access level: {accessLevel ?? 'read-only'}</p>
-//           </div>
-//           <div className="flex gap-3">
-//             <input
-//               className="w-full rounded-2xl border border-slate-200/70 bg-slate-50/80 px-4 py-2 text-sm text-slate-800 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 md:w-72"
-//               placeholder="Search by name, role, or email"
-//               value={query}
-//               onChange={(event) => setQuery(event.target.value)}
-//             />
-//             {accessLevel !== 'read-only' && accessLevel !== 'self' && (
-//               <button className="rounded-2xl bg-gradient-to-r from-primary-500 to-accent-500 px-4 py-2 text-sm font-semibold text-white shadow-md focus:outline-none focus:ring-4 focus:ring-primary-500/30">
-//                 Add member
-//               </button>
-//             )}
-//           </div>
-//         </div>
-
-//         <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200/70">
-//           <table className="min-w-full divide-y divide-slate-200/70 text-left text-sm text-slate-600">
-//             <thead className="bg-slate-50/70 text-xs uppercase tracking-wide text-slate-400">
-//               <tr>
-//                 <th className="px-4 py-3">Name</th>
-//                 <th className="px-4 py-3">Role</th>
-//                 <th className="px-4 py-3">Department</th>
-//                 <th className="px-4 py-3">Email</th>
-//                 <th className="px-4 py-3">Status</th>
-//               </tr>
-//             </thead>
-//             <tbody className="divide-y divide-slate-100/70">
-//               {filteredEmployees.map((employee) => (
-//                 <tr key={employee.id} className="transition hover:bg-slate-50/80">
-//                   <td className="px-4 py-3 font-semibold text-slate-800">{employee.name}</td>
-//                   <td className="px-4 py-3">{employee.role}</td>
-//                   <td className="px-4 py-3">{employee.department}</td>
-//                   <td className="px-4 py-3 text-primary-600">{employee.email}</td>
-//                   <td className="px-4 py-3">
-//                     <span
-//                       className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider ${
-//                         employee.status === 'Active'
-//                           ? 'bg-emerald-500/10 text-emerald-600'
-//                           : employee.status === 'On Leave'
-//                             ? 'bg-amber-500/10 text-amber-600'
-//                             : 'bg-slate-500/10 text-slate-600'
-//                       }`}
-//                     >
-//                       {employee.status}
-//                     </span>
-//                   </td>
-//                 </tr>
-//               ))}
-//             </tbody>
-//           </table>
-//         </div>
-//       </section>
-//     </div>
-//   )
-// }
-
-// export default Employees
 
 
 // src/pages/dashboard/Employees.tsx
-import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import type { ChangeEvent, FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import {
-  createEmployee,
-  deleteEmployee,
-  fetchEmployeeById,
-  fetchEmployees,
-  updateEmployee
-} from '../../api/employees'
+import { createEmployee, deleteEmployee, fetchEmployeeById, fetchEmployees, updateEmployee } from '../../api/employees'
 import Button from '../../components/ui/Button'
 import EmptyState from '../../components/ui/EmptyState'
 import InputField from '../../components/ui/InputField'
 import LoadingState from '../../components/ui/LoadingState'
 import Modal from '../../components/ui/Modal'
 import SelectField from '../../components/ui/SelectField'
-import TextareaField from '../../components/ui/TextareaField'
+// removed unused TextareaField
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
-import type { Employee, EmployeePayload, EmployeeStatus } from '../../types/employees'
+import type { Employee, EmployeePayload, EmployeeStatus } from '../../api/employees'
+import { API_BASE_URL } from '../../api/http'
+import { fetchUsers } from '../../api/users'
 
 interface EmployeeFormState {
   firstName: string
   lastName: string
   department: string
   position: string
-  userId: string // You'll need a user dropdown
+  userId: string
   managerId: string
+  status: EmployeeStatus
 }
 
 const defaultStatusOptions: EmployeeStatus[] = ['Active', 'On Leave', 'Contract']
 
 const initialFormState: EmployeeFormState = {
-  name: '',
-  role: '',
+  firstName: '',
+  lastName: '',
   department: '',
-  email: '',
+  position: '',
+  userId: '',
+  managerId: '',
   status: 'Active',
-  manager: '',
-  hireDate: '',
 }
 
-function ensureDateInputValue(value?: string): string {
-  if (!value) return ''
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? value.slice(0, 10) : date.toISOString().slice(0, 10)
-}
+// removed unused ensureDateInputValue
 
 function mapEmployeeToForm(employee: Employee): EmployeeFormState {
   return {
-    name: employee.name ?? '',
-    role: employee.role ?? '',
+    firstName: employee.firstName ?? '',
+    lastName: employee.lastName ?? '',
     department: employee.department ?? '',
-    email: employee.email ?? '',
-    status: employee.status ?? 'Active',
-    manager: employee.manager ?? '',
-    hireDate: ensureDateInputValue(employee.hireDate),
+    position: employee.position ?? '',
+    userId: employee.userId ?? '',
+    managerId: employee.managerId ?? '',
+    status: (employee.status as EmployeeStatus) ?? 'Active',
   }
 }
 
@@ -223,6 +67,7 @@ function Employees() {
   const { showToast } = useToast()
 
   const [employees, setEmployees] = useState<Employee[]>([])
+  const [users, setUsers] = useState<Array<{ id: string; email: string; firstName?: string; lastName?: string }>>([])
   const [isListLoading, setIsListLoading] = useState<boolean>(false)
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [statusFilter, setStatusFilter] = useState<EmployeeStatus | 'All'>('All')
@@ -283,6 +128,27 @@ function Employees() {
     loadEmployees()
   }, [loadEmployees])
 
+
+
+
+// Inside useEffect:
+useEffect(() => {
+  async function loadUsers() {
+    try {
+      const data = await fetchUsers()
+      console.log('Fetched users:', data) // Debug log;
+      
+      setUsers(Array.isArray(data) ? data : [])
+    } catch (error) {
+      // Optional: show toast or log
+      console.error('Failed to load users:', error)
+    }
+  }
+  loadUsers()
+}, [])
+
+
+
   const uniqueStatuses = useMemo(() => {
     const set = new Set<EmployeeStatus>(defaultStatusOptions)
     employees.forEach((employee) => {
@@ -312,13 +178,8 @@ function Employees() {
       if (!matchesStatus) return false
       if (!search) return true
 
-      const valuesToSearch = [
-        employee.name,
-        employee.role,
-        employee.department,
-        employee.email,
-        statusValue,
-      ]
+      const fullName = `${employee.firstName ?? ''} ${employee.lastName ?? ''}`.trim()
+      const valuesToSearch = [fullName, employee.position, employee.department, statusValue]
       return valuesToSearch.some((value) => value && value.toString().toLowerCase().includes(search))
     })
   }, [employees, searchTerm, statusFilter])
@@ -415,21 +276,16 @@ function Employees() {
   const handleFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    const trimmedName = formState.name.trim()
-    if (!trimmedName) {
-      setFormError('Employee name is required.')
+    if (!formState.firstName.trim()) {
+      setFormError('First name is required.')
       return
     }
-
-    const trimmedEmail = formState.email.trim()
-    if (!trimmedEmail) {
-      setFormError('Email is required.')
+    if (!formState.lastName.trim()) {
+      setFormError('Last name is required.')
       return
     }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(trimmedEmail)) {
-      setFormError('Please enter a valid email address.')
+    if (!formState.userId) {
+      setFormError('User account is required.')
       return
     }
 
@@ -439,7 +295,7 @@ function Employees() {
       department: formState.department.trim() || null,
       position: formState.position.trim() || null,
       userId: formState.userId,
-      managerId: formState.managerId || null,
+      managerId: formState.managerId ? formState.managerId : null,
     }
     setIsFormSubmitting(true)
 
@@ -510,9 +366,7 @@ function Employees() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-slate-900">Team Directory</h1>
-            <p className="mt-1 text-sm text-slate-500">
-              Manage team members, roles, and contact information.
-            </p>
+            <p className="mt-1 text-sm text-slate-500">Manage employees and their details.</p>
           </div>
           <Button onClick={openCreateForm}>Add employee</Button>
         </div>
@@ -549,7 +403,6 @@ function Employees() {
           <LoadingState className="mt-6" message="Loading employees..." />
         ) : filteredEmployees.length === 0 ? (
           <EmptyState
-            className="mt-6"
             title="No employees found"
             description="Adjust your filters or add a new employee to get started."
             action={<Button onClick={openCreateForm}>Add employee</Button>}
@@ -565,7 +418,7 @@ function Employees() {
                 >
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-3">
-                      <h3 className="text-base font-semibold text-slate-900">{employee.name}</h3>
+                      <h3 className="text-base font-semibold text-slate-900">{`${employee.firstName} ${employee.lastName}`}</h3>
                       <span className={`rounded-full px-2 py-1 text-xs font-semibold uppercase tracking-wide ${employee.status === 'Active'
                         ? 'bg-emerald-500/10 text-emerald-600'
                         : employee.status === 'On Leave'
@@ -576,21 +429,19 @@ function Employees() {
                       </span>
                     </div>
                     <p className="text-sm text-slate-500">
-                      {employee.role ? employee.role : 'No role provided.'}
+                      {employee.position ? employee.position : 'No position provided.'}
                     </p>
                     <dl className="space-y-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
                       <div className="flex justify-between">
                         <dt>Department</dt>
                         <dd className="text-slate-600">{employee.department || '--'}</dd>
                       </div>
-                      <div className="flex justify-between">
-                        <dt>Email</dt>
-                        <dd className="text-slate-600">{employee.email || '--'}</dd>
-                      </div>
-                      <div className="flex justify-between">
-                        <dt>Manager</dt>
-                        <dd className="text-slate-600">{employee.manager || '--'}</dd>
-                      </div>
+                      {employee.managerName && (
+                        <div className="flex justify-between">
+                          <dt>Manager</dt>
+                          <dd className="text-slate-600">{employee.managerName}</dd>
+                        </div>
+                      )}
                     </dl>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -618,7 +469,7 @@ function Employees() {
       {/* Details Modal */}
       <Modal
         isOpen={isDetailsModalOpen}
-        title={selectedEmployee?.name ? `${selectedEmployee.name}'s Profile` : 'Employee details'}
+        title={selectedEmployee ? `${selectedEmployee.firstName} ${selectedEmployee.lastName}'s Profile` : 'Employee details'}
         onClose={closeDetailsModal}
         widthClassName="max-w-3xl"
         footer={
@@ -657,9 +508,9 @@ function Employees() {
         ) : selectedEmployee ? (
           <div className="space-y-6">
             <div>
-              <h3 className="text-xl font-semibold text-slate-900">{selectedEmployee.name}</h3>
+              <h3 className="text-xl font-semibold text-slate-900">{`${selectedEmployee.firstName} ${selectedEmployee.lastName}`}</h3>
               <p className="mt-2 text-sm text-slate-500">
-                {selectedEmployee.role ? selectedEmployee.role : 'No role provided.'}
+                {selectedEmployee.position ? selectedEmployee.position : 'No position provided.'}
               </p>
             </div>
 
@@ -679,18 +530,12 @@ function Employees() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Department</p>
                 <p className="text-sm font-semibold text-slate-800">{selectedEmployee.department || '--'}</p>
               </div>
-              <div className="space-y-2 rounded-2xl bg-slate-50/60 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Email</p>
-                <p className="text-sm font-semibold text-slate-800">{selectedEmployee.email || '--'}</p>
-              </div>
-              <div className="space-y-2 rounded-2xl bg-slate-50/60 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Manager</p>
-                <p className="text-sm font-semibold text-slate-800">{selectedEmployee.manager || '--'}</p>
-              </div>
-              <div className="space-y-2 rounded-2xl bg-slate-50/60 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Hire date</p>
-                <p className="text-sm font-semibold text-slate-800">{formatDate(selectedEmployee.hireDate)}</p>
-              </div>
+              {selectedEmployee.managerName && (
+                <div className="space-y-2 rounded-2xl bg-slate-50/60 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Manager</p>
+                  <p className="text-sm font-semibold text-slate-800">{selectedEmployee.managerName}</p>
+                </div>
+              )}
             </div>
 
             <div className="grid gap-2 text-xs uppercase tracking-wide text-slate-400">
@@ -761,7 +606,7 @@ function Employees() {
                 value={formState.userId}
                 onChange={handleFormChange('userId')}
                 options={users.map(user => ({
-                  label: `${user.email} (${user.firstName} ${user.lastName})`,
+                  label: `${user.username} (${user.role || 'User'})`, // ✅ Use available fields
                   value: user.id
                 }))}
                 required
